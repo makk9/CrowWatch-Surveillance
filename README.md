@@ -37,3 +37,19 @@ Build a system that integrates multiple live camera feeds into a modular surveil
 - Prioritize Data - send metadata (TCP) and frame data (UDP) with a priority-based system.
 - Be able to classify and discern between different types of birds — ex: Crows could be allies, Blue jays could be threats.
 - More secure form of data transmission.
+
+### **Progress So Far(updated: 11/25/2024)**:
+    - Integrated a live camera feed running on a different network into system.
+    - Added simulated IR imaging to one feed using OpenCV filters to replicate thermal imaging effects.
+    - Developed a modular Camera class to handle different functionalities like resolution adjustments and IR simulation.
+    - Integrated YOLOv8-nano for lightweight, efficient object detection.
+        - Successfully tested the model, displaying bounding boxes and labels for detected objects on live video streams.
+    - UDP Streaming:
+        - Configured a client-server architecture to stream live video frames from a client device to the server using UDP.
+        -Handled frame encoding and decoding for efficient transmission.
+    - TCP Metadata Handling:
+        - Implemented TCP for transmitting control signals and metadata between the client and server.
+    - Port Forwarding:
+        - Configured the system to handle real-world network setups by testing and implementing port forwarding.
+    - Set up a WebSocket server to stream processed video frames (with object detection) to a React-based user interface.
+    - Very basic "Control Center" interface that just has live video feed as of now.
