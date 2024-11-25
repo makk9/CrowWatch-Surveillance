@@ -96,6 +96,7 @@ async def video_stream(websocket, path):
                 # Encode the processed frame to JPEG
                 _, buffer = cv2.imencode('.jpg', processed_frame)
                 await websocket.send(buffer.tobytes())
+                print("Sending frame via WebSocket.")
                 await asyncio.sleep(0.03)  # Adjust frame rate for streaming
     except Exception as e:
         print(f"Error in WebSocket video stream: {e}")
