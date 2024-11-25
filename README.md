@@ -22,6 +22,8 @@ Build a system that integrates multiple live camera feeds into a modular surveil
     - **TCP**: Used for reliable transmission of metadata (e.g., toggling cameras on/off, changing settings).
     - **UDP**: Used for real-time video stream transmission.
     - **Port Forwarding**: Simulated transmitting video streams on different networks to a central server using specific ports.
+6. **NixOS Configuration**:
+    - Create a `flake.nix` to package the project and environment for easy replication on other systems.
 
 ### **Environment**:
 
