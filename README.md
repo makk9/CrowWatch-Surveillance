@@ -51,5 +51,5 @@ Build a system that integrates multiple live camera feeds into a modular surveil
         - Implemented TCP for transmitting control signals and metadata between the client and server.
     - Port Forwarding:
         - Configured the system to handle real-world network setups by testing and implementing port forwarding.
-    - Set up a WebSocket server to stream processed video frames (with object detection) to a React-based user interface.
+    - Set up a WebSocket server to stream processed video frames to a React-based user interface.
     - Very basic "Control Center" interface that just has live video feed as of now.
