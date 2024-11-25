@@ -4,7 +4,7 @@
 
 ### **Objective**:
 
-Build a system that integrates multiple live camera feeds into a modular surveillance platform, processes real-time video data to detect and track "airborne threats" (e.g., birds), and visualizes this information through a simple UI control dashboard.
+Build a system that integrates multiple live camera feeds into a modular surveillance platform, processes real-time video data to detect and track "airborne threats" (e.g., birds), and visualizes this information through a "Control Center" interface.
 
 ### **Core Features**:
 
