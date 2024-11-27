@@ -12,7 +12,7 @@ class CameraClient:
         """
         Initialize the camera and networking sockets.
         """
-        self.cap = cv2.VideoCapture(device_index)
+        self.cap = cv2.VideoCapture(device_index, cv2.CAP_DSHOW)
         if not self.cap.isOpened():
             raise ValueError(f"Error: Could not open camera at index {device_index}")
 
@@ -69,7 +69,7 @@ class CameraClient:
         print("Resources released.")
 
 if __name__ == "__main__":
-    client = CameraClient(0)
+    client = CameraClient(1)
     try:
         client.connect()
         client.send_metadata()
