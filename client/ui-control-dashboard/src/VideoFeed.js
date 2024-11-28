@@ -5,7 +5,8 @@ const VideoFeed = () => {
 
     useEffect(() => {
         // Connect to the WebSocket
-        const ws = new WebSocket("ws://0.0.0.0:8765");
+        //const ws = new WebSocket("ws://0.0.0.0:8765");
+        const ws = new WebSocket("ws://localhost:8765");
 
         ws.onmessage = (message) => {
             // Decode the binary data into a base64 image string
