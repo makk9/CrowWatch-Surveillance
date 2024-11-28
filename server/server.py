@@ -7,8 +7,10 @@ import websockets
 import asyncio
 import logging
 from threading import Lock
+from queue import Queue
 
 frame_lock = Lock()
+frames_queue = Queue(maxsize=10)
 
 
 # Configure logging
@@ -85,34 +87,42 @@ def handle_udp_frames():
     """
     Handle UDP frame streaming
     """
-    global processed_frame  # Access the global processed frame
+    #global processed_frame  # Access the global processed frame
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     udp_socket.bind((HOST, UDP_PORT))
     logging.info(f"UDP Server listening on {HOST}:{UDP_PORT}")
 
-    model = YOLO("yolov8n.pt")  # Load YOLO model
+    #model = YOLO("yolov8n.pt")  # Load YOLO model
 
     while True:
         try:
             data, addr = udp_socket.recvfrom(65535)  # Receive frame data
             frame = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
-            frame_count = 0
-            detection_interval = 20
-            if frame is not None:
-                # Perform object detection
-                detections = detect_objects_yolo(frame, model)
-                if frame_count % detection_interval == 0:
-                    detections = detect_objects_yolo(frame, model)
-                frame_count += 1
+
+            if not frames_queue.full():
+                frames_queue.put(frame)
+            else:
+                continue
+
+
+
+            # frame_count = 0
+            # detection_interval = 20
+            # if frame is not None:
+            #     # Perform object detection
+            #     detections = detect_objects_yolo(frame, model)
+            #     if frame_count % detection_interval == 0:
+            #         detections = detect_objects_yolo(frame, model)
+            #     frame_count += 1
                 
-                for label, (x, y, w, h) in detections:
-                    # Draw bounding box and label
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                    cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            #     for label, (x, y, w, h) in detections:
+            #         # Draw bounding box and label
+            #         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            #         cv2.putText(frame, label, (x, y - 10), cv2.FONT_HEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 
-                # Update the processed frame
-                with frame_lock:
-                    processed_frame = frame
+            #     # Update the processed frame
+            #     with frame_lock:
+            #         processed_frame = frame
                     
                 # cv2.imshow(f"Live Feed from {addr}", frame)  # Display frame
                 # if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -122,7 +132,39 @@ def handle_udp_frames():
             break
 
     udp_socket.close()
-    cv2.destroyAllWindows()
+    #cv2.destroyAllWindows()
+
+def detection_thread():
+    """
+    Thread to process frames using YOLO.
+    """
+    global processed_frame
+    model = YOLO("yolov8n.pt")  # Load YOLO model
+
+    while True:
+        try:
+            if not frames_queue.empty():
+                # Get the next frame from the queue
+                frame = frames_queue.get()
+                
+                frame_count = 0
+                detection_interval = 5
+                # Perform object detection
+                if frame_count % detection_interval == 0:
+                    detections = detect_objects_yolo(frame, model)
+                frame_count += 1
+                
+                for label, (x, y, w, h) in detections:
+                    # Draw bounding box and label
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    cv2.putText(frame, label, (x, y - 10), cv2.FONT_HEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                
+                # Update the processed frame
+                with frame_lock:
+                    processed_frame = frame
+                
+        except Exception as e:
+            logging.error(f"Error in detection thread: {e}")
 
 def detect_objects_yolo(frame, model):
     """
@@ -165,6 +207,10 @@ def main():
     # Start TCP server in a separate thread
     tcp_thread = threading.Thread(target=start_tcp_server, daemon=True)
     tcp_thread.start()
+
+    # Start detection thread
+    detect_thread = threading.Thread(target=detection_thread, daemon=True)
+    detect_thread.start()
 
     # Run WebSocket server
     try:
