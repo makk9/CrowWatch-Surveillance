@@ -6,6 +6,10 @@ from ultralytics import YOLO
 import websockets
 import asyncio
 import logging
+from threading import Lock
+
+frame_lock = Lock()
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -28,12 +32,13 @@ async def video_stream(websocket, path=None):
 
     try:
         while True:
-            if processed_frame is not None:
-                # Encode the processed frame to JPEG
-                _, buffer = cv2.imencode('.jpg', processed_frame)
-                await websocket.send(buffer.tobytes())
-                logging.info("Sending frame via WebSocket.")
-                await asyncio.sleep(0.03)  # Adjust frame rate for streaming
+            with frame_lock:
+                if processed_frame is not None:
+                    # Encode the processed frame to JPEG
+                    _, buffer = cv2.imencode('.jpg', processed_frame)
+                    await websocket.send(buffer.tobytes())
+                    #logging.info("Sending frame via WebSocket.")
+                    await asyncio.sleep(0.03)  # Adjust frame rate for streaming
     except websockets.exceptions.ConnectionClosed:
         logging.info(f"WebSocket client disconnected: {websocket.remote_address}")
     except Exception as e:
@@ -92,10 +97,10 @@ def handle_udp_frames():
             data, addr = udp_socket.recvfrom(65535)  # Receive frame data
             frame = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
             frame_count = 0
-            detection_interval = 5
+            detection_interval = 20
             if frame is not None:
                 # Perform object detection
-                #detections = detect_objects_yolo(frame, model)
+                detections = detect_objects_yolo(frame, model)
                 if frame_count % detection_interval == 0:
                     detections = detect_objects_yolo(frame, model)
                 frame_count += 1
@@ -106,11 +111,12 @@ def handle_udp_frames():
                     cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 
                 # Update the processed frame
-                processed_frame = frame
+                with frame_lock:
+                    processed_frame = frame
                     
-                cv2.imshow(f"Live Feed from {addr}", frame)  # Display frame
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+                # cv2.imshow(f"Live Feed from {addr}", frame)  # Display frame
+                # if cv2.waitKey(1) & 0xFF == ord('q'):
+                #     break
         except Exception as e:
             logging.error(f"Error receiving frame from UDP: {e}")
             break
@@ -122,7 +128,9 @@ def detect_objects_yolo(frame, model):
     """
     Perform object detection using YOLO
     """
-    results = model(frame, stream=True)
+    resized_frame = cv2.resize(frame, (320, 320))  # Resize to 320x320 (YOLO-friendly)
+    results = model(resized_frame, stream=True, imgsz=320)
+    #results = model(frame, stream=True)
     detections = []
     for result in results:
         for box in result.boxes:
